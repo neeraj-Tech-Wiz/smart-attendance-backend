@@ -5,21 +5,33 @@ import numpy as np
 class FaceService:
 
     def __init__(self):
-        print("Loading AI face recognition model...")
+        self.app = None
 
-        self.app = FaceAnalysis(
-            name="buffalo_l",
-            providers=["CPUExecutionProvider"]
-        )
+    def load_model(self):
+        """
+        Load the AI model only when it is actually needed.
+        """
 
-        self.app.prepare(
-            ctx_id=-1,
-            det_size=(640, 640)
-        )
+        if self.app is None:
 
-        print("Face recognition model loaded successfully!")
+            print("Loading AI face recognition model...")
+
+            self.app = FaceAnalysis(
+                name="buffalo_l",
+                providers=["CPUExecutionProvider"]
+            )
+
+            self.app.prepare(
+                ctx_id=-1,
+                det_size=(640, 640)
+            )
+
+            print("Face recognition model loaded successfully!")
 
     def detect_faces(self, image):
+
+        self.load_model()
+
         faces = self.app.get(image)
 
         results = []
@@ -33,6 +45,9 @@ class FaceService:
         return results
 
     def get_faces_with_embeddings(self, image):
+
+        self.load_model()
+
         faces = self.app.get(image)
 
         results = []
@@ -52,13 +67,18 @@ class FaceService:
         Registration image must contain exactly one face.
         """
 
+        self.load_model()
+
         faces = self.app.get(image)
 
         if len(faces) == 0:
             return None, "No face detected"
 
         if len(faces) > 1:
-            return None, "Multiple faces detected. Upload a photo with only one student."
+            return None, (
+                "Multiple faces detected. "
+                "Upload a photo with only one student."
+            )
 
         return faces[0].embedding, None
 
@@ -70,12 +90,21 @@ class FaceService:
         embedding1 = np.array(embedding1)
         embedding2 = np.array(embedding2)
 
-        similarity = np.dot(embedding1, embedding2) / (
-            np.linalg.norm(embedding1) *
-            np.linalg.norm(embedding2)
+        denominator = (
+            np.linalg.norm(embedding1)
+            * np.linalg.norm(embedding2)
+        )
+
+        if denominator == 0:
+            return 0.0
+
+        similarity = (
+            np.dot(embedding1, embedding2)
+            / denominator
         )
 
         return float(similarity)
 
 
+# Create service object, but DON'T load AI model yet
 face_service = FaceService()
