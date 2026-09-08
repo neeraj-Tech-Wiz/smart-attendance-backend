@@ -6,6 +6,8 @@ import cv2
 
 from app.face_service import face_service
 
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.database import engine, SessionLocal, Base
 from app import models
 
@@ -19,6 +21,14 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Smart Attendance AI Service"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class Base64RecognitionRequest(BaseModel):
